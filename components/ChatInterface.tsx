@@ -27,6 +27,98 @@ const QUICK_PROMPTS = [
   "Tenderize tough beef with raw papaya",
 ];
 
+function renderInline(text: string, isUser: boolean) {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={i} className={isUser ? "font-bold text-white" : "font-semibold text-foreground"}>
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("*") && part.endsWith("*")) {
+      return (
+        <em key={i} className={isUser ? "italic text-white/90" : "italic text-muted-foreground"}>
+          {part.slice(1, -1)}
+        </em>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <code key={i} className="bg-secondary/80 px-1.5 py-0.5 rounded text-xs font-mono text-blue-400">
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return part;
+  });
+}
+
+function FormattedMessage({ content, isUser }: { content: string; isUser: boolean }) {
+  if (isUser) {
+    return <div className="whitespace-pre-line leading-relaxed">{content}</div>;
+  }
+
+  const lines = content.split("\n");
+  return (
+    <div className="space-y-2 text-sm leading-relaxed">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={idx} className="h-1" />;
+        }
+
+        if (trimmed.startsWith("### ")) {
+          return (
+            <h3 key={idx} className="text-base sm:text-lg font-bold text-foreground mt-3 mb-1.5 flex items-center gap-1.5">
+              {renderInline(trimmed.replace(/^###\s+/, ""), isUser)}
+            </h3>
+          );
+        }
+
+        if (trimmed.startsWith("#### ")) {
+          return (
+            <h4 key={idx} className="text-sm font-semibold text-foreground mt-2 mb-1">
+              {renderInline(trimmed.replace(/^####\s+/, ""), isUser)}
+            </h4>
+          );
+        }
+
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-2">
+              <span className="text-blue-500 font-bold">•</span>
+              <span className="text-foreground/90">{renderInline(trimmed.replace(/^[-*]\s+/, ""), isUser)}</span>
+            </div>
+          );
+        }
+
+        const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+        if (numMatch) {
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-2">
+              <span className="text-blue-500 font-bold text-xs mt-0.5">{numMatch[1]}.</span>
+              <span className="text-foreground/90">{renderInline(numMatch[2], isUser)}</span>
+            </div>
+          );
+        }
+
+        if (trimmed.startsWith("> ")) {
+          return (
+            <blockquote key={idx} className="border-l-2 border-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-r-lg text-xs italic text-amber-600 dark:text-amber-400 my-1">
+              {renderInline(trimmed.replace(/^>\s+/, ""), isUser)}
+            </blockquote>
+          );
+        }
+
+        return <p key={idx}>{renderInline(trimmed, isUser)}</p>;
+      })}
+    </div>
+  );
+}
+
+
 interface ChatInterfaceProps {
   autoSpeak: boolean;
   externalQuery?: string | null;
@@ -170,9 +262,7 @@ export function ChatInterface({
               }`}
             >
               {/* Message text */}
-              <div className="whitespace-pre-line prose prose-sm dark:prose-invert max-w-none">
-                {msg.content}
-              </div>
+              <FormattedMessage content={msg.content} isUser={msg.role === "user"} />
 
               {/* Scenario Interactive Checklist Card */}
               {msg.scenario && (

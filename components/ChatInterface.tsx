@@ -19,6 +19,7 @@ import { VoiceWave } from "./VoiceWave";
 import { ChecklistCard } from "./ChecklistCard";
 import { Scenario } from "@/lib/search/searchEngine";
 import { Language, UI_TEXT } from "@/lib/i18n";
+import { ComprehensiveGuideline } from "@/lib/knowledge/guidelineEngine";
 
 interface Message {
   id: string;
@@ -26,13 +27,36 @@ interface Message {
   content: string;
   voiceText?: string;
   scenario?: Scenario | null;
+  guideline?: ComprehensiveGuideline | null;
   confidence?: number;
   related?: Scenario[];
 }
 
 function renderInline(text: string, isUser: boolean) {
-  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
+  const parts = text.split(/(\[.*?\]\(.*?\)|\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
   return parts.map((part, i) => {
+    if (part.startsWith("[") && part.includes("](") && part.endsWith(")")) {
+      const match = part.match(/^\[(.*?)\]\((.*?)\)$/);
+      if (match) {
+        const [, label, url] = match;
+        const isTel = url.startsWith("tel:");
+        return (
+          <a
+            key={i}
+            href={url}
+            target={isTel ? undefined : "_blank"}
+            rel={isTel ? undefined : "noopener noreferrer"}
+            className={
+              isUser
+                ? "underline font-bold text-white hover:text-white/80"
+                : "text-blue-600 dark:text-blue-400 font-bold underline hover:text-blue-500"
+            }
+          >
+            {label}
+          </a>
+        );
+      }
+    }
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
         <strong key={i} className={isUser ? "font-bold text-white" : "font-bold text-foreground"}>
@@ -72,6 +96,10 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
           return <div key={idx} className="h-1" />;
         }
 
+        if (trimmed === "---" || trimmed === "***") {
+          return <hr key={idx} className="my-2.5 border-border/70" />;
+        }
+
         if (trimmed.startsWith("### ")) {
           return (
             <h3 key={idx} className="text-base sm:text-lg font-bold text-foreground mt-3 mb-1.5 flex items-center gap-1.5">
@@ -85,6 +113,16 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
             <h4 key={idx} className="text-sm sm:text-base font-bold text-foreground mt-2 mb-1">
               {renderInline(trimmed.replace(/^####\s+/, ""), isUser)}
             </h4>
+          );
+        }
+
+        if (line.startsWith("  - ") || line.startsWith("    - ") || line.startsWith("\t- ")) {
+          const contentAfter = line.replace(/^\s+-\s+/, "");
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-6 my-0.5 text-xs sm:text-sm text-muted-foreground">
+              <span className="text-blue-500 font-bold">•</span>
+              <span className="text-foreground/90">{renderInline(contentAfter, isUser)}</span>
+            </div>
           );
         }
 
@@ -222,6 +260,7 @@ export function ChatInterface({
         content: data.reply,
         voiceText: data.voiceText,
         scenario: data.scenario,
+        guideline: data.guideline,
         confidence: data.confidence,
         related: data.related,
       };
@@ -452,7 +491,11 @@ export function ChatInterface({
                 {/* Scenario Interactive Checklist Card */}
                 {msg.scenario && (
                   <div className="mt-3">
-                    <ChecklistCard scenario={msg.scenario} language={language} />
+                    <ChecklistCard
+                      scenario={msg.scenario}
+                      guideline={msg.guideline || undefined}
+                      language={language}
+                    />
                   </div>
                 )}
 

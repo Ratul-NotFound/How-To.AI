@@ -1,0 +1,25 @@
+{
+  "name": "How-To.AI - Life Navigation Assistant",
+  "short_name": "How-To.AI",
+  "description": "Voice-enabled AI assistant for 2,000+ real-world life problems, land checks, legal procedures, and inspections.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "education", "lifestyle", "productivity"]
+}

@@ -211,12 +211,7 @@ Before signing any agreement or paying an advance for land, cross-verify these 5
     if (directMatch && confidence >= 0.45) {
       const voiceText = `Here is what you need to know about ${directMatch.title}. ${directMatch.what_people_dont_know} Make sure to follow the checklist: ${directMatch.critical_checklist}. Watch out for this primary risk: ${directMatch.primary_risk}.`;
 
-      const markdownReply = `I found a verified guide in our knowledge base that matches your question:
-
-**${directMatch.title}**
-*Category: ${directMatch.category} • ${directMatch.subcategory}*
-
-Below is the interactive verification checklist and critical nuance to prevent mistakes:`;
+      const markdownReply = `Here is the verified step-by-step checklist and key insights from our knowledge base:`;
 
       return NextResponse.json({
         reply: markdownReply,
@@ -235,12 +230,7 @@ Below is the interactive verification checklist and critical nuance to prevent m
 
       const voiceText = `I found a relevant guide regarding ${top.title}. ${top.what_people_dont_know}`;
 
-      const markdownReply = `Here is a relevant guide from our verified database:
-
-**${top.title}**
-*Category: ${top.category} • ${top.subcategory}*
-
-Explore the interactive checklist below, or check the related topics:`;
+      const markdownReply = `Here is the most relevant step-by-step guide from our database:`;
 
       return NextResponse.json({
         reply: markdownReply,

@@ -1,7 +1,19 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, Send, Bot, User, Sparkles, Volume2, ArrowRight } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  Send,
+  User,
+  Sparkles,
+  Volume2,
+  ArrowRight,
+  RotateCcw,
+  Compass,
+  CheckCircle2,
+  Lightbulb
+} from "lucide-react";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 import { useVoiceSynthesis } from "@/hooks/useVoiceSynthesis";
 import { VoiceWave } from "./VoiceWave";
@@ -18,13 +30,74 @@ interface Message {
   related?: Scenario[];
 }
 
-const QUICK_PROMPTS = [
-  "How to test formalin in fish?",
-  "Used car inspection checklist",
-  "How to apply for e-mutation namjari?",
-  "How to remove turmeric stain from shirt?",
-  "XI class college admission choice strategy",
-  "Tenderize tough beef with raw papaya",
+// 8 Featured topics designed for everyday people (tech & non-tech)
+const FEATURED_TOPICS = [
+  {
+    icon: "🚗",
+    title: "Used Car Inspection",
+    desc: "Check chassis welding, engine smoke & BRTA records",
+    prompt: "Used car inspection checklist",
+    color: "hover:border-blue-500/50 hover:bg-blue-500/5",
+  },
+  {
+    icon: "📜",
+    title: "Buying Land & Flats",
+    desc: "30-year deed chain, Khatian, Namjari & avoiding fraud",
+    prompt: "How to check land documents before buying",
+    color: "hover:border-emerald-500/50 hover:bg-emerald-500/5",
+  },
+  {
+    icon: "🐟",
+    title: "Food Safety & Formalin",
+    desc: "Detect formalin in fish, milk & honey adulteration",
+    prompt: "How to test formalin in fish?",
+    color: "hover:border-amber-500/50 hover:bg-amber-500/5",
+  },
+  {
+    icon: "🍳",
+    title: "Cooking & Kitchen Fixes",
+    desc: "Crispy fish frying, meat tenderizing & fixing salty dishes",
+    prompt: "How to make a crispy fish fry without tearing",
+    color: "hover:border-orange-500/50 hover:bg-orange-500/5",
+  },
+  {
+    icon: "📱",
+    title: "Lost Phone & Police GD",
+    desc: "Official online GD procedure & IMEI tracking guide",
+    prompt: "What to do if phone is lost: online GD procedure",
+    color: "hover:border-indigo-500/50 hover:bg-indigo-500/5",
+  },
+  {
+    icon: "🎓",
+    title: "College & University",
+    desc: "HSC college choice strategy, varsity merit lists & seats",
+    prompt: "XI class college admission choice strategy",
+    color: "hover:border-purple-500/50 hover:bg-purple-500/5",
+  },
+  {
+    icon: "👔",
+    title: "Stains & Home DIY",
+    desc: "Remove turmeric, rust, oil stains & household repairs",
+    prompt: "How to remove turmeric stain from shirt?",
+    color: "hover:border-teal-500/50 hover:bg-teal-500/5",
+  },
+  {
+    icon: "⚖️",
+    title: "Legal & Emergency SOPs",
+    desc: "Section 144, tenant police verification & passport",
+    prompt: "Filing police tenant verification form (CIMS)",
+    color: "hover:border-rose-500/50 hover:bg-rose-500/5",
+  },
+];
+
+const QUICK_PILLS = [
+  "🚗 Used car check",
+  "📜 Land documents",
+  "🐟 Formalin in fish",
+  "🍳 Crispy fish fry",
+  "📱 Lost phone GD",
+  "👔 Remove turmeric stain",
+  "🎓 College admissions",
 ];
 
 function renderInline(text: string, isUser: boolean) {
@@ -32,7 +105,7 @@ function renderInline(text: string, isUser: boolean) {
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={i} className={isUser ? "font-bold text-white" : "font-semibold text-foreground"}>
+        <strong key={i} className={isUser ? "font-bold text-white" : "font-bold text-foreground"}>
           {part.slice(2, -2)}
         </strong>
       );
@@ -46,7 +119,7 @@ function renderInline(text: string, isUser: boolean) {
     }
     if (part.startsWith("`") && part.endsWith("`")) {
       return (
-        <code key={i} className="bg-secondary/80 px-1.5 py-0.5 rounded text-xs font-mono text-blue-400">
+        <code key={i} className="bg-secondary/80 px-1.5 py-0.5 rounded text-xs font-mono text-blue-500">
           {part.slice(1, -1)}
         </code>
       );
@@ -57,12 +130,12 @@ function renderInline(text: string, isUser: boolean) {
 
 function FormattedMessage({ content, isUser }: { content: string; isUser: boolean }) {
   if (isUser) {
-    return <div className="whitespace-pre-line leading-relaxed">{content}</div>;
+    return <div className="whitespace-pre-line leading-relaxed text-sm sm:text-base font-medium">{content}</div>;
   }
 
   const lines = content.split("\n");
   return (
-    <div className="space-y-2 text-sm leading-relaxed">
+    <div className="space-y-2 text-sm sm:text-base leading-relaxed text-foreground">
       {lines.map((line, idx) => {
         const trimmed = line.trim();
         if (!trimmed) {
@@ -79,7 +152,7 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
 
         if (trimmed.startsWith("#### ")) {
           return (
-            <h4 key={idx} className="text-sm font-semibold text-foreground mt-2 mb-1">
+            <h4 key={idx} className="text-sm sm:text-base font-bold text-foreground mt-2 mb-1">
               {renderInline(trimmed.replace(/^####\s+/, ""), isUser)}
             </h4>
           );
@@ -87,8 +160,8 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
 
         if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
           return (
-            <div key={idx} className="flex items-start gap-2 pl-2">
-              <span className="text-blue-500 font-bold">•</span>
+            <div key={idx} className="flex items-start gap-2.5 pl-1 my-1">
+              <span className="text-blue-500 font-bold text-lg leading-none mt-0.5">•</span>
               <span className="text-foreground/90">{renderInline(trimmed.replace(/^[-*]\s+/, ""), isUser)}</span>
             </div>
           );
@@ -97,8 +170,10 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
         const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
         if (numMatch) {
           return (
-            <div key={idx} className="flex items-start gap-2 pl-2">
-              <span className="text-blue-500 font-bold text-xs mt-0.5">{numMatch[1]}.</span>
+            <div key={idx} className="flex items-start gap-2.5 pl-1 my-1">
+              <span className="text-blue-600 dark:text-blue-400 font-bold text-sm bg-blue-500/10 px-1.5 py-0.5 rounded-md flex-shrink-0 mt-0.5">
+                {numMatch[1]}
+              </span>
               <span className="text-foreground/90">{renderInline(numMatch[2], isUser)}</span>
             </div>
           );
@@ -106,18 +181,17 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
 
         if (trimmed.startsWith("> ")) {
           return (
-            <blockquote key={idx} className="border-l-2 border-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-r-lg text-xs italic text-amber-600 dark:text-amber-400 my-1">
+            <blockquote key={idx} className="border-l-3 border-amber-500 bg-amber-500/10 px-3.5 py-2 rounded-r-xl text-xs sm:text-sm italic text-amber-700 dark:text-amber-300 my-2">
               {renderInline(trimmed.replace(/^>\s+/, ""), isUser)}
             </blockquote>
           );
         }
 
-        return <p key={idx}>{renderInline(trimmed, isUser)}</p>;
+        return <p key={idx} className="my-1">{renderInline(trimmed, isUser)}</p>;
       })}
     </div>
   );
 }
-
 
 interface ChatInterfaceProps {
   autoSpeak: boolean;
@@ -130,18 +204,13 @@ export function ChatInterface({
   externalQuery,
   onClearExternalQuery,
 }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: `👋 Hello! I am **How-To.AI**, your voice-enabled life navigation assistant.\n\nI am backed by a verified database of **2,000 real-world life scenarios**—from land deeds, BRTA car checks, and college admissions, to kitchen chemistry, stain removal, and emergency SOPs.\n\n**Tap the microphone to speak, or type your question below!**`,
-      voiceText: "Hello! I am How-To dot A I. I can guide you through 2,000 real-world life problems. Tap the microphone to speak or type your question.",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const latestMessageRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { speak, isSpeaking, stopSpeaking } = useVoiceSynthesis();
 
@@ -193,7 +262,7 @@ export function ChatInterface({
         {
           id: `error-${Date.now()}`,
           role: "assistant",
-          content: "Sorry, I encountered an issue connecting to the knowledge base. Please try again.",
+          content: "Sorry, I had trouble reaching the verified database. Please check your connection and try again.",
         },
       ]);
     } finally {
@@ -221,170 +290,310 @@ export function ChatInterface({
     }
   }, [externalQuery]);
 
-  // Scroll to bottom
+  // Scroll smoothly to start of assistant response so user reads from the top
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.role === "assistant") {
+        latestMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
   }, [messages, isLoading]);
 
+  const handleResetChat = () => {
+    stopSpeaking();
+    setMessages([]);
+    setInputValue("");
+  };
+
+  const isHeroState = messages.length === 0;
+
   return (
-    <div className="flex flex-col h-[calc(100vh-65px)] max-w-4xl mx-auto px-3 sm:px-4 py-3">
+    <div className="flex flex-col h-[calc(100vh-62px)] max-w-4xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
+      {/* Top Banner when in conversation */}
+      {!isHeroState && (
+        <div className="flex items-center justify-between pb-2 border-b border-border/40 mb-2">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>Interactive Guide Session</span>
+          </div>
+          <button
+            onClick={handleResetChat}
+            className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground bg-secondary/80 hover:bg-secondary px-2.5 py-1 rounded-lg transition-colors"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>New Question</span>
+          </button>
+        </div>
+      )}
+
       {/* Voice Activity Wave */}
-      <div className="mb-2">
+      <div className="mb-1">
         <VoiceWave isListening={isListening} isSpeaking={isSpeaking} />
       </div>
 
-      {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex items-start gap-3 ${
-              msg.role === "user" ? "flex-row-reverse" : "flex-row"
-            }`}
+      {/* Active Listening Floating Banner */}
+      {isListening && (
+        <div className="p-3 mb-2 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
+            <span className="text-xs sm:text-sm font-semibold text-foreground">
+              {transcript ? `"${transcript}"` : "Listening... Speak your question now"}
+            </span>
+          </div>
+          <button
+            onClick={toggleListening}
+            className="px-3 py-1 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors"
           >
-            {/* Avatar */}
-            <div
-              className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                msg.role === "user"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gradient-to-tr from-indigo-500 to-blue-600 text-white shadow-md shadow-blue-500/20"
-              }`}
-            >
-              {msg.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+            Stop
+          </button>
+        </div>
+      )}
+
+      {/* Scrollable Area: Hero State OR Messages */}
+      <div className="flex-1 overflow-y-auto pr-1 pb-4 space-y-4">
+        {isHeroState ? (
+          /* ================= WELCOME HERO STATE (NON-TECH FRIENDLY) ================= */
+          <div className="py-4 sm:py-8 space-y-6 sm:space-y-8 max-w-3xl mx-auto text-center">
+            {/* Friendly Greeting & Headline */}
+            <div className="space-y-3">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 text-white flex items-center justify-center mx-auto shadow-xl shadow-blue-500/25">
+                <Compass className="w-8 h-8 sm:w-10 sm:h-10 animate-pulse" />
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+                What can I help you solve today?
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
+                Step-by-step verified solutions to 2,000 real-world life problems—from land deeds and car checks to food safety and emergency procedures.
+              </p>
             </div>
 
-            {/* Bubble */}
-            <div
-              className={`max-w-[88%] sm:max-w-[80%] rounded-2xl p-4 text-sm leading-relaxed ${
-                msg.role === "user"
-                  ? "bg-blue-600 text-white rounded-tr-sm"
-                  : "bg-card border border-border text-foreground rounded-tl-sm shadow-sm"
-              }`}
-            >
-              {/* Message text */}
-              <FormattedMessage content={msg.content} isUser={msg.role === "user"} />
-
-              {/* Scenario Interactive Checklist Card */}
-              {msg.scenario && (
-                <div className="mt-3">
-                  <ChecklistCard scenario={msg.scenario} />
-                </div>
-              )}
-
-              {/* Related Scenario Quick Links */}
-              {msg.related && msg.related.length > 0 && (
-                <div className="mt-3 pt-2 border-t border-border/50 text-xs space-y-1.5">
-                  <span className="font-semibold text-muted-foreground block">
-                    Explore Related Guides:
+            {/* Giant Inviting Microphone Button */}
+            {isSpeechSupported && (
+              <div className="p-4 sm:p-5 rounded-3xl border border-blue-500/20 bg-gradient-to-b from-blue-500/5 to-transparent flex flex-col items-center gap-3">
+                <button
+                  onClick={toggleListening}
+                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 active:scale-95 ${
+                    isListening
+                      ? "bg-red-500 shadow-red-500/40 animate-pulse"
+                      : "bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105"
+                  }`}
+                  title="Tap to speak your question"
+                >
+                  {isListening ? (
+                    <MicOff className="w-7 h-7 sm:w-9 sm:h-9" />
+                  ) : (
+                    <Mic className="w-7 h-7 sm:w-9 sm:h-9" />
+                  )}
+                </button>
+                <div className="text-center">
+                  <span className="text-sm sm:text-base font-bold text-foreground block">
+                    {isListening ? "Listening... Tap to finish" : "Tap to Speak"}
                   </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {msg.related.map((rel) => (
-                      <button
-                        key={rel.id}
-                        onClick={() => handleSendMessage(rel.title)}
-                        className="px-2.5 py-1 rounded-lg bg-secondary/80 hover:bg-secondary text-foreground text-[11px] font-medium border border-border transition-colors flex items-center gap-1"
-                      >
-                        <span>{rel.title}</span>
-                        <ArrowRight className="w-3 h-3 text-blue-500" />
-                      </button>
-                    ))}
-                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    Ask freely in English or Bangla
+                  </span>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Speech replay button */}
-              {msg.voiceText && (
-                <div className="mt-2.5 flex justify-end">
+            {/* Featured Topic Cards (One-Tap Solutions) */}
+            <div className="space-y-3 text-left">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                  Popular Life Problems (Tap to solve):
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                {FEATURED_TOPICS.map((topic, idx) => (
                   <button
-                    onClick={() => speak(msg.voiceText || msg.content)}
-                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-blue-500 font-medium transition-colors"
+                    key={idx}
+                    onClick={() => handleSendMessage(topic.prompt)}
+                    className={`p-3.5 sm:p-4 rounded-2xl border border-border bg-card text-left transition-all shadow-sm flex items-start gap-3 group active:scale-98 ${topic.color}`}
                   >
-                    <Volume2 className="w-3 h-3" />
-                    <span>Replay Audio</span>
+                    <span className="text-2xl sm:text-3xl p-2 rounded-xl bg-secondary/80 flex-shrink-0 group-hover:scale-110 transition-transform">
+                      {topic.icon}
+                    </span>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1">
+                        <h4 className="text-sm sm:text-base font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          {topic.title}
+                        </h4>
+                        <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                      </div>
+                      <p className="text-xs sm:text-sm text-muted-foreground leading-snug line-clamp-2">
+                        {topic.desc}
+                      </p>
+                    </div>
                   </button>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
           </div>
-        ))}
+        ) : (
+          /* ================= CONVERSATION MESSAGES FLOW ================= */
+          messages.map((msg, idx) => (
+            <div
+              key={msg.id}
+              ref={idx === messages.length - 1 ? latestMessageRef : undefined}
+              className={`flex items-start gap-2.5 sm:gap-3.5 ${
+                msg.role === "user" ? "flex-row-reverse" : "flex-row"
+              }`}
+            >
+              {/* Avatar */}
+              <div
+                className={`w-8 h-8 sm:w-9 sm:h-9 rounded-2xl flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-sm ${
+                  msg.role === "user"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-blue-500/20"
+                }`}
+              >
+                {msg.role === "user" ? (
+                  <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                ) : (
+                  <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
+                )}
+              </div>
 
+              {/* Message Bubble */}
+              <div
+                className={`max-w-[92%] sm:max-w-[85%] rounded-3xl p-4 sm:p-5 text-sm sm:text-base leading-relaxed ${
+                  msg.role === "user"
+                    ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-tr-md shadow-md shadow-blue-600/10"
+                    : "bg-card border border-border/80 text-foreground rounded-tl-md shadow-sm"
+                }`}
+              >
+                {/* Formatted Content */}
+                <FormattedMessage content={msg.content} isUser={msg.role === "user"} />
+
+                {/* Scenario Interactive Checklist Card */}
+                {msg.scenario && (
+                  <div className="mt-3">
+                    <ChecklistCard scenario={msg.scenario} />
+                  </div>
+                )}
+
+                {/* Related Scenario Quick Links */}
+                {msg.related && msg.related.length > 0 && (
+                  <div className="mt-4 pt-3 border-t border-border/60 text-xs sm:text-sm space-y-2">
+                    <span className="font-bold text-muted-foreground flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Related Verified Guides You Might Need:</span>
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-1">
+                      {msg.related.map((rel) => (
+                        <button
+                          key={rel.id}
+                          onClick={() => handleSendMessage(rel.title)}
+                          className="px-3 py-1.5 rounded-xl bg-secondary/80 hover:bg-secondary text-foreground text-xs sm:text-sm font-semibold border border-border transition-all flex items-center gap-1.5 active:scale-95 hover:border-blue-500/40"
+                        >
+                          <span>{rel.title}</span>
+                          <ArrowRight className="w-3 h-3 text-blue-500" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Speech replay button */}
+                {msg.voiceText && (
+                  <div className="mt-3 pt-2 flex items-center justify-between border-t border-border/40">
+                    <span className="text-[11px] text-muted-foreground">Voice Assistant</span>
+                    <button
+                      onClick={() => speak(msg.voiceText || msg.content)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors active:scale-95"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span>Listen to Answer</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+
+        {/* Loading Spinner */}
         {isLoading && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground italic pl-11">
-            <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-            <span>Scanning 2,000 verified scenarios...</span>
+          <div className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border/80 max-w-md shadow-sm ml-11 animate-pulse">
+            <div className="w-3 h-3 rounded-full bg-blue-500 animate-ping" />
+            <span className="text-xs sm:text-sm font-semibold text-foreground">
+              Searching 2,000 verified guides & verifying facts...
+            </span>
           </div>
         )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggested Quick Prompts */}
-      {messages.length <= 2 && (
-        <div className="py-2 overflow-x-auto no-scrollbar flex items-center gap-1.5 mb-2">
-          {QUICK_PROMPTS.map((prompt, idx) => (
+      {/* Suggested Quick Prompts Pills (visible when chatting) */}
+      {!isHeroState && (
+        <div className="py-1.5 overflow-x-auto no-scrollbar flex items-center gap-1.5 mb-1.5">
+          {QUICK_PILLS.map((pill, idx) => (
             <button
               key={idx}
-              onClick={() => handleSendMessage(prompt)}
-              className="px-3 py-1.5 rounded-full text-xs font-medium border border-border bg-card hover:bg-accent hover:border-blue-500/40 text-foreground whitespace-nowrap transition-all shadow-sm"
+              onClick={() => handleSendMessage(pill)}
+              className="px-3 py-1 rounded-full text-xs font-semibold border border-border bg-card hover:bg-accent text-foreground whitespace-nowrap transition-all shadow-xs active:scale-95"
             >
-              {prompt}
+              {pill}
             </button>
           ))}
         </div>
       )}
 
-      {/* Input Box and Voice Mic */}
-      <div className="relative rounded-2xl border border-border bg-card p-2 shadow-lg focus-within:ring-2 focus-within:ring-blue-500 transition-all">
-        {/* Live speech transcript banner */}
-        {isListening && transcript && (
-          <div className="px-3 py-1.5 mb-1.5 rounded-lg bg-blue-500/10 text-blue-500 text-xs font-medium flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-            <span className="truncate">"{transcript}"</span>
-          </div>
-        )}
-
-        <div className="flex items-center gap-2">
-          {/* Voice Microphone Button */}
-          {isSpeechSupported ? (
-            <button
-              onClick={toggleListening}
-              title={isListening ? "Stop Listening" : "Tap to Speak"}
-              className={`p-2.5 rounded-xl transition-all ${
-                isListening
-                  ? "bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30 scale-105"
-                  : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            </button>
-          ) : null}
-
-          {/* Text Input */}
+      {/* Ergonomic Floating Bottom Input Box */}
+      <div className="relative rounded-2xl sm:rounded-3xl border border-border/80 bg-card p-2 sm:p-2.5 shadow-lg focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSendMessage();
+          }}
+          className="flex items-center gap-1.5 sm:gap-2"
+        >
+          {/* Main Input Text Field */}
           <input
+            ref={inputRef}
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            placeholder={
-              isListening ? "Listening... Speak now!" : "Ask any life problem (e.g. land, car, food, stain, admission)..."
-            }
-            className="flex-1 bg-transparent px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
+            placeholder="Ask any life problem (e.g. used car, land, food, stain, admission)..."
+            className="flex-1 bg-transparent px-3 py-2 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
+            disabled={isLoading}
           />
+
+          {/* Prominent Voice Microphone Button */}
+          {isSpeechSupported && (
+            <button
+              type="button"
+              onClick={toggleListening}
+              className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl transition-all flex items-center justify-center active:scale-90 ${
+                isListening
+                  ? "bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30"
+                  : "bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+              }`}
+              title={isListening ? "Listening... Click to stop" : "Click to speak with your voice"}
+            >
+              <Mic className="w-5 h-5 sm:w-5 sm:h-5" />
+            </button>
+          )}
 
           {/* Send Button */}
           <button
-            onClick={() => handleSendMessage()}
+            type="submit"
             disabled={!inputValue.trim() || isLoading}
-            className="p-2.5 rounded-xl bg-blue-600 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20"
+            className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl transition-all flex items-center justify-center active:scale-90 ${
+              inputValue.trim() && !isLoading
+                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25 hover:opacity-95"
+                : "bg-muted text-muted-foreground/50 cursor-not-allowed"
+            }`}
+            title="Send question"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-5 h-5 sm:w-5 sm:h-5" />
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );

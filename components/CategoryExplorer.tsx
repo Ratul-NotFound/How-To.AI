@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Search, ChevronRight, Layers, ArrowLeft } from "lucide-react";
+import { X, Search, ChevronRight, Layers, ArrowLeft, Compass, Sparkles } from "lucide-react";
 import { Scenario } from "@/lib/search/searchEngine";
 import { ChecklistCard } from "./ChecklistCard";
 
@@ -9,6 +9,21 @@ interface CategoryExplorerProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectScenario: (scenario: Scenario) => void;
+}
+
+function getCatIcon(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("vehicle") || n.includes("car")) return "🚗";
+  if (n.includes("land") || n.includes("property")) return "📜";
+  if (n.includes("food") || n.includes("adulteration")) return "🐟";
+  if (n.includes("cook") || n.includes("culinary")) return "🍳";
+  if (n.includes("tech") || n.includes("gadget")) return "💻";
+  if (n.includes("education") || n.includes("college")) return "🎓";
+  if (n.includes("legal") || n.includes("emergency")) return "⚖️";
+  if (n.includes("stain") || n.includes("maintenance")) return "🧼";
+  if (n.includes("health") || n.includes("medical")) return "🩺";
+  if (n.includes("pet") || n.includes("agriculture")) return "🌱";
+  return "💡";
 }
 
 export function CategoryExplorer({
@@ -51,45 +66,52 @@ export function CategoryExplorer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="w-full max-w-4xl h-[90vh] bg-card border border-border rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+      <div className="w-full max-w-4xl h-[90vh] bg-card border border-border/80 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="p-4 sm:p-5 border-b border-border/80 flex items-center justify-between bg-secondary/30">
+          <div className="flex items-center gap-2.5">
             {selectedCategory && (
               <button
                 onClick={() => {
                   setSelectedCategory(null);
                   setActiveScenario(null);
                 }}
-                className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground mr-1"
+                className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground transition-colors mr-1 active:scale-95"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-5 h-5" />
               </button>
             )}
-            <Layers className="w-5 h-5 text-blue-500" />
-            <h2 className="text-base sm:text-lg font-bold text-foreground">
-              {selectedCategory ? selectedCategory : "Explore 2,000 Scenarios"}
-            </h2>
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+              <Compass className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-foreground leading-tight">
+                {selectedCategory ? selectedCategory : "Browse All Topics & Guides"}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {selectedCategory ? "Select a guide to view details" : "2,000+ verified real-world solutions"}
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground transition-colors"
+            className="p-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors active:scale-95"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Search Bar inside Explorer */}
-        <div className="p-3 sm:p-4 border-b border-border bg-secondary/30">
+        <div className="p-3 sm:p-4 border-b border-border/80 bg-background/50">
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+            <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search across all 2,000 topics..."
-              className="w-full bg-background border border-border rounded-xl pl-9 pr-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search topics (e.g. car, land, fish, admission, passport)..."
+              className="w-full bg-card border border-border rounded-2xl pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             />
           </div>
         </div>
@@ -100,10 +122,10 @@ export function CategoryExplorer({
             <div className="space-y-4">
               <button
                 onClick={() => setActiveScenario(null)}
-                className="flex items-center gap-1.5 text-xs text-blue-500 font-semibold mb-2"
+                className="flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 font-bold mb-2 hover:underline"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back to results
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to topic list</span>
               </button>
               <ChecklistCard scenario={activeScenario} />
               <button
@@ -111,57 +133,60 @@ export function CategoryExplorer({
                   onSelectScenario(activeScenario);
                   onClose();
                 }}
-                className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20"
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-sm sm:text-base hover:opacity-95 transition-opacity shadow-lg shadow-blue-500/25 active:scale-98"
               >
-                Ask Assistant about this Scenario
+                Ask Assistant about this Guide
               </button>
             </div>
           ) : selectedCategory || searchQuery ? (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground mb-3">
-                {isLoading ? "Searching scenarios..." : `Found ${scenarios.length} matching guides:`}
-              </p>
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  {isLoading ? "Searching database..." : `Found ${scenarios.length} matching guides:`}
+                </span>
+              </div>
               {scenarios.map((sc) => (
                 <div
                   key={sc.id}
                   onClick={() => setActiveScenario(sc)}
-                  className="p-3.5 rounded-2xl border border-border/80 bg-card hover:bg-accent/40 transition-colors cursor-pointer flex items-center justify-between gap-3 group"
+                  className="p-4 rounded-2xl border border-border/80 bg-card hover:border-blue-500/40 hover:bg-secondary/40 transition-all cursor-pointer flex items-center justify-between gap-3 group active:scale-99 shadow-xs"
                 >
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <span className="font-mono text-blue-500">#{sc.id}</span>
-                      <span>•</span>
-                      <span>{sc.subcategory}</span>
-                    </div>
-                    <h4 className="text-sm font-semibold text-foreground group-hover:text-blue-500 transition-colors line-clamp-1">
+                    <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                      {sc.subcategory}
+                    </span>
+                    <h4 className="text-sm sm:text-base font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
                       {sc.title}
                     </h4>
-                    <p className="text-xs text-muted-foreground line-clamp-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
                       {sc.problem_statement}
                     </p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 flex-shrink-0 transition-transform group-hover:translate-x-0.5" />
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-blue-500 flex-shrink-0 transition-transform group-hover:translate-x-1" />
                 </div>
               ))}
             </div>
           ) : (
-            /* Category grid */
+            /* Category grid with friendly icons */
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {categories.map((cat) => (
                 <button
                   key={cat.name}
                   onClick={() => setSelectedCategory(cat.name)}
-                  className="p-4 rounded-2xl border border-border bg-card hover:bg-accent/40 hover:border-blue-500/40 transition-all text-left flex items-center justify-between group shadow-sm"
+                  className="p-4 rounded-2xl border border-border/80 bg-card hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-left flex items-center gap-3.5 group shadow-xs active:scale-98"
                 >
-                  <div>
-                    <h4 className="text-sm font-bold text-foreground group-hover:text-blue-500 transition-colors">
+                  <span className="text-2xl p-2.5 rounded-2xl bg-secondary/80 flex-shrink-0 group-hover:scale-110 transition-transform">
+                    {getCatIcon(cat.name)}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
                       {cat.name}
                     </h4>
                     <span className="text-xs text-muted-foreground">
-                      {cat.count} verified guides
+                      {cat.count} verified solutions
                     </span>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 transition-transform group-hover:translate-x-0.5" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 transition-transform group-hover:translate-x-1 flex-shrink-0" />
                 </button>
               ))}
             </div>

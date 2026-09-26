@@ -39,83 +39,114 @@ const GRAMMATICAL_STOP_WORDS = new Set([
 // Domain-specific bidirectional synonym & concept expansion dictionary
 const SYNONYMS: Record<string, string[]> = {
   // Automotive & Vehicles
-  "car": ["vehicle", "automobile", "sedan", "gari", "auto", "reconditioned", "chassis", "motor", "engine"],
-  "cars": ["vehicle", "automobile", "sedan", "gari", "auto"],
-  "vehicle": ["car", "automobile", "transport", "motor", "gari"],
-  "vehicles": ["car", "automobile", "transport", "motor", "gari"],
-  "used": ["second-hand", "reconditioned", "pre-owned", "old"],
-  "second-hand": ["used", "reconditioned", "pre-owned"],
-  "reconditioned": ["used", "second-hand", "japan"],
-  "inspection": ["inspect", "check", "verif", "test", "examin", "audit"],
-  "inspect": ["check", "verif", "test", "examin", "inspection"],
-  "checklist": ["guide", "steps", "list", "procedure", "points"],
-  "buy": ["purchase", "buying", "purchasing", "acquir"],
-  "buying": ["purchase", "purchasing", "buy", "acquir"],
-  "purchase": ["buy", "buying", "acquir"],
+  "car": ["vehicle", "automobile", "sedan", "gari", "auto", "reconditioned", "chassis", "motor", "engine", "গাড়ি", "গাড়ি"],
+  "cars": ["vehicle", "automobile", "sedan", "gari", "auto", "গাড়ি", "গাড়ি"],
+  "vehicle": ["car", "automobile", "transport", "motor", "gari", "গাড়ি", "গাড়ি"],
+  "vehicles": ["car", "automobile", "transport", "motor", "gari", "গাড়ি", "গাড়ি"],
+  "used": ["second-hand", "reconditioned", "pre-owned", "old", "পুরাতন", "ব্যবহৃত"],
+  "second-hand": ["used", "reconditioned", "pre-owned", "পুরাতন"],
+  "reconditioned": ["used", "second-hand", "japan", "রিকন্ডিশন"],
+  "inspection": ["inspect", "check", "verif", "test", "examin", "audit", "যাচাই", "পরীক্ষা"],
+  "inspect": ["check", "verif", "test", "examin", "inspection", "যাচাই", "পরীক্ষা"],
+  "checklist": ["guide", "steps", "list", "procedure", "points", "চেকলিস্ট", "নিয়ম"],
+  "buy": ["purchase", "buying", "purchasing", "acquir", "কেনা", "ক্রয়"],
+  "buying": ["purchase", "purchasing", "buy", "acquir", "কেনা", "ক্রয়"],
+  "purchase": ["buy", "buying", "acquir", "কেনা", "ক্রয়"],
+  "গাড়ি": ["car", "vehicle", "automobile", "used", "inspection", "chassis", "engine", "brta"],
+  "গাড়ি": ["car", "vehicle", "automobile", "used", "inspection", "chassis", "engine", "brta"],
 
   // Land, Property & Legal Documents
-  "land": ["property", "plot", "jami", "porcha", "khatian", "mutation", "dalil", "holding"],
-  "plot": ["land", "property", "jami"],
-  "flat": ["apartment", "building", "housing"],
-  "apartment": ["flat", "housing", "property"],
-  "documents": ["doc", "porcha", "khatian", "dalil", "deed", "papers", "record"],
-  "document": ["doc", "porcha", "khatian", "dalil", "deed", "papers", "record"],
-  "deed": ["dalil", "document", "khatiyan"],
-  "mutation": ["namjari", "porcha", "khatian"],
+  "land": ["property", "plot", "jami", "porcha", "khatian", "mutation", "dalil", "holding", "জমি", "প্লট"],
+  "plot": ["land", "property", "jami", "প্লট", "জমি"],
+  "flat": ["apartment", "building", "housing", "ফ্ল্যাট"],
+  "apartment": ["flat", "housing", "property", "ফ্ল্যাট"],
+  "documents": ["doc", "porcha", "khatian", "dalil", "deed", "papers", "record", "দলিল", "কাগজপত্র"],
+  "document": ["doc", "porcha", "khatian", "dalil", "deed", "papers", "record", "দলিল", "কাগজপত্র"],
+  "deed": ["dalil", "document", "khatiyan", "দলিল"],
+  "mutation": ["namjari", "porcha", "khatian", "নামজারি"],
+  "জমি": ["land", "property", "plot", "dalil", "khatian", "porcha", "mutation", "deed"],
+  "দলিল": ["dalil", "deed", "land", "document", "khatian"],
+  "খতিয়ান": ["khatian", "porcha", "land", "mutation", "record"],
+  "পর্চা": ["porcha", "khatian", "land", "record"],
+  "নামজারি": ["mutation", "namjari", "land", "khatian"],
 
   // Culinary & Food Safety
-  "fish": ["mach", "seafood", "fillet", "fishg", "ilish", "rui"],
-  "fry": ["frying", "fried", "crispy", "pan-fry", "deep-fry"],
-  "cooking": ["recipe", "cook", "culinary", "food", "kitchen", "prep"],
-  "recipe": ["cook", "cooking", "make", "prepare", "culinary", "dish"],
-  "make": ["cook", "prepare", "create", "recipe"],
-  "formalin": ["chemical", "adulteration", "fish", "preservative", "toxic"],
-  "adulteration": ["fake", "chemical", "toxic", "poison", "test"],
+  "fish": ["mach", "seafood", "fillet", "fishg", "ilish", "rui", "মাছ"],
+  "fry": ["frying", "fried", "crispy", "pan-fry", "deep-fry", "ভাজা", "মুচমুচে"],
+  "cooking": ["recipe", "cook", "culinary", "food", "kitchen", "prep", "রান্না"],
+  "recipe": ["cook", "cooking", "make", "prepare", "culinary", "dish", "রেসিপি"],
+  "make": ["cook", "prepare", "create", "recipe", "বানানো", "রান্না"],
+  "formalin": ["chemical", "adulteration", "fish", "preservative", "toxic", "ফরমালিন"],
+  "adulteration": ["fake", "chemical", "toxic", "poison", "test", "ভেজাল"],
+  "মাছ": ["fish", "fillet", "formalin", "fry", "mach"],
+  "মাছের": ["fish", "fillet", "formalin", "fry", "mach"],
+  "ফরমালিন": ["formalin", "chemical", "adulteration", "fish", "toxic"],
+  "রান্না": ["cooking", "cook", "recipe", "kitchen", "culinary"],
+  "ভাজা": ["fry", "fried", "crispy", "cooking"],
 
   // Tech & Gadgets
-  "phone": ["mobile", "smartphone", "device", "imei", "lost"],
-  "mobile": ["phone", "smartphone", "device", "imei"],
+  "phone": ["mobile", "smartphone", "device", "imei", "lost", "ফোন", "মোবাইল"],
+  "mobile": ["phone", "smartphone", "device", "imei", "ফোন", "মোবাইল"],
   "gpu": ["graphics", "card", "nvidia", "rtx", "mining"],
   "graphics": ["gpu", "card", "display"],
+  "ফোন": ["phone", "mobile", "smartphone", "device", "imei", "lost", "gd"],
+  "মোবাইল": ["phone", "mobile", "smartphone", "device", "imei", "lost", "gd"],
 
   // Education
-  "college": ["admission", "hsc", "varsity", "university", "faculty", "institution"],
-  "university": ["varsity", "college", "admission", "undergraduate", "buet", "du", "iba", "medical"],
-  "admission": ["vorti", "seat", "application", "merit", "exam"],
+  "college": ["admission", "hsc", "varsity", "university", "faculty", "institution", "কলেজ"],
+  "university": ["varsity", "college", "admission", "undergraduate", "buet", "du", "iba", "medical", "বিশ্ববিদ্যালয়"],
+  "admission": ["vorti", "seat", "application", "merit", "exam", "ভর্তি"],
+  "ভর্তি": ["admission", "college", "university", "hsc", "varsity"],
+  "কলেজ": ["college", "admission", "hsc", "varsity"],
 
   // Legal & Administration
-  "passport": ["travel", "visa", "immigration", "dip", "epassport"],
-  "police": ["thana", "gd", "fir", "complaint", "officer"],
-  "lost": ["missing", "stolen", "gd", "thana", "report"]
+  "passport": ["travel", "visa", "immigration", "dip", "epassport", "পাসপোর্ট"],
+  "police": ["thana", "gd", "fir", "complaint", "officer", "পুলিশ", "থানা"],
+  "lost": ["missing", "stolen", "gd", "thana", "report", "হারানো"],
+  "জিডি": ["gd", "police", "thana", "lost", "report"],
+  "হারানো": ["lost", "missing", "stolen", "gd", "phone", "mobile"],
+  "হারিয়ে": ["lost", "missing", "stolen", "gd", "phone", "mobile"],
+  "হারাল": ["lost", "missing", "stolen", "gd", "phone", "mobile"],
+  "উদ্ধার": ["recover", "track", "find", "lost", "phone"],
+  "কেনার": ["buy", "purchase", "buying", "car", "land"],
+  "দলিলপত্র": ["dalil", "document", "khatian", "deed"]
 };
 
 // Domain category keyword triggers for domain affinity boosts
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
   "Vehicles, Transport & Driving": [
     "car", "cars", "vehicl", "auto", "drive", "driv", "brta", "engin", "chassi",
-    "odomet", "tyre", "tire", "motorcycl", "bike", "scooter", "second-hand", "recondit"
+    "odomet", "tyre", "tire", "motorcycl", "bike", "scooter", "second-hand", "recondit",
+    "গাড়ি", "গাড়ি", "ড্রাইভিং", "ইঞ্জিন", "বিআরটিএ", "চেসিস", "মালিকানা", "মোটরসাইকেল"
   ],
   "Cooking Techniques & Culinary Troubleshooting": [
     "cook", "culinari", "recip", "fish", "meat", "curri", "fry", "fri", "salt",
-    "sauce", "rice", "gravi", "chicken", "beef", "pan", "steak", "crisp"
+    "sauce", "rice", "gravi", "chicken", "beef", "pan", "steak", "crisp",
+    "রান্না", "মাছ", "মাংস", "ভাজা", "রেসিপি", "লবণ", "তেল", "মুচমুচে", "বিরিয়ানি"
   ],
   "Food Safety, Adulteration & Nutrition": [
-    "formalin", "adulter", "carbid", "chemic", "toxic", "poison", "pesticid", "milk", "oil", "honey"
+    "formalin", "adulter", "carbid", "chemic", "toxic", "poison", "pesticid", "milk", "oil", "honey",
+    "ফরমালিন", "ভেজাল", "খাদ্য", "রাসায়নিক", "বিষাক্ত", "ফল", "দুধ"
   ],
   "Land, Housing & Property": [
-    "land", "plot", "flat", "apart", "porcha", "khatian", "mutat", "dalil", "deed", "registri", "sub-registri", "rajuk"
+    "land", "plot", "flat", "apart", "porcha", "khatian", "mutat", "dalil", "deed", "registri", "sub-registri", "rajuk",
+    "জমি", "দলিল", "খতিয়ান", "পর্চা", "নামজারি", "খাজনা", "ফ্ল্যাট", "প্লট", "রাজউক"
   ],
   "Education, College Admissions & Academics": [
-    "colleg", "univers", "admiss", "varsiti", "buet", "medicin", "medic", "degre", "faculti"
+    "colleg", "univers", "admiss", "varsiti", "buet", "medicin", "medic", "degre", "faculti",
+    "কলেজ", "ভর্তি", "বিশ্ববিদ্যালয়", "মেধা", "আসন", "বিজ্ঞান", "কমার্স"
   ],
   "Consumer Tech, Hardware & Gadgets": [
-    "gpu", "graphic", "laptop", "comput", "phone", "smartphon", "processor", "ram", "screen", "monitor"
+    "gpu", "graphic", "laptop", "comput", "phone", "smartphon", "processor", "ram", "screen", "monitor",
+    "ফোন", "মোবাইল", "ল্যাপটপ", "কম্পিউটার"
   ],
   "Home Maintenance, Stain Removal & DIY Hacks": [
-    "stain", "leak", "mold", "rust", "paint", "pipe", "drain", "clean"
+    "stain", "leak", "mold", "rust", "paint", "pipe", "drain", "clean",
+    "দাগ", "হলুদ", "মরিচা", "পরিষ্কার"
   ],
   "Legal, Civil Rights & Emergency SOPs": [
-    "polic", "thana", "gd", "fir", "court", "lawyer", "notari", "legal", "bail"
+    "polic", "thana", "gd", "fir", "court", "lawyer", "notari", "legal", "bail",
+    "পুলিশ", "জিডি", "থানা", "আইন", "পাসপোর্ট", "ভাড়াটিয়া", "নোটারি"
   ]
 };
 

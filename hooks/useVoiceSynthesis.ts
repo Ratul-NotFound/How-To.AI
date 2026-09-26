@@ -23,8 +23,10 @@ export function useVoiceSynthesis() {
   }, []);
 
   const speak = useCallback(
-    (text: string) => {
+    (text: string, lang: "en" | "bn" = "bn") => {
       if (!isSupported || typeof window === "undefined") return;
+
+      const isBengali = lang === "bn" || /[\u0980-\u09FF]/.test(text);
 
       // Clean markdown symbols for natural speech
       const cleanText = text
@@ -37,14 +39,27 @@ export function useVoiceSynthesis() {
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.rate = 1.05;
+      utterance.rate = isBengali ? 0.95 : 1.0;
       utterance.pitch = 1.0;
+      utterance.lang = isBengali ? "bn-BD" : "en-US";
 
-      // Select best voice: Natural / Google / Microsoft / English
-      const bestVoice =
-        voices.find((v) => v.name.includes("Natural") || v.name.includes("Google")) ||
-        voices.find((v) => v.lang.startsWith("en")) ||
-        voices[0];
+      // Select best voice: check if Bengali voice is available
+      let bestVoice: SpeechSynthesisVoice | undefined;
+      if (isBengali) {
+        bestVoice = voices.find(
+          (v) =>
+            v.lang.toLowerCase().startsWith("bn") ||
+            v.name.toLowerCase().includes("bengali") ||
+            v.name.toLowerCase().includes("bangla")
+        );
+      }
+
+      if (!bestVoice) {
+        bestVoice =
+          voices.find((v) => v.name.includes("Natural") || v.name.includes("Google")) ||
+          voices.find((v) => v.lang.startsWith("en")) ||
+          voices[0];
+      }
 
       if (bestVoice) {
         utterance.voice = bestVoice;

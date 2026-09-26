@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { CheckCircle2, Circle, AlertTriangle, Lightbulb, CheckCheck } from "lucide-react";
 import { Scenario } from "@/lib/search/searchEngine";
+import { Language, UI_TEXT, translateCategory } from "@/lib/i18n";
 
 interface ChecklistCardProps {
   scenario: Scenario;
+  language?: Language;
 }
 
 function getCategoryMeta(category: string): { icon: string; badgeClass: string } {
@@ -37,10 +39,18 @@ function getCategoryMeta(category: string): { icon: string; badgeClass: string }
   return { icon: "💡", badgeClass: "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 border-blue-200 dark:border-blue-800" };
 }
 
-export function ChecklistCard({ scenario }: ChecklistCardProps) {
-  const items = scenario.critical_checklist
+export function ChecklistCard({ scenario, language = "bn" }: ChecklistCardProps) {
+  const t = UI_TEXT[language];
+
+  // Optional localized fields if provided by API
+  const title: string = (language === "bn" && (scenario as any).bn_title) || scenario.title;
+  const whatPeopleDontKnow: string = (language === "bn" && (scenario as any).bn_what_people_dont_know) || scenario.what_people_dont_know;
+  const rawChecklist: string = (language === "bn" && (scenario as any).bn_critical_checklist) || scenario.critical_checklist || "";
+  const primaryRisk: string = (language === "bn" && (scenario as any).bn_primary_risk) || scenario.primary_risk;
+
+  const items: string[] = rawChecklist
     .split(";")
-    .map((s) => s.trim())
+    .map((s: string) => s.trim())
     .filter(Boolean);
 
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
@@ -56,6 +66,7 @@ export function ChecklistCard({ scenario }: ChecklistCardProps) {
   const isAllComplete = items.length > 0 && completedCount === items.length;
   const progressPercent = items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0;
   const meta = getCategoryMeta(scenario.category);
+  const localizedCat = translateCategory(scenario.category, language);
 
   return (
     <div className="space-y-4 my-2 text-left">
@@ -63,14 +74,14 @@ export function ChecklistCard({ scenario }: ChecklistCardProps) {
       <div className="space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap text-xs">
           <span className={`inline-flex items-center gap-1.5 font-bold px-2.5 py-0.5 rounded-full border ${meta.badgeClass}`}>
-            <span>{meta.icon}</span>
-            <span>{scenario.category}</span>
+            <span>{localizedCat.icon || meta.icon}</span>
+            <span>{localizedCat.name}</span>
           </span>
           <span className="text-muted-foreground">•</span>
           <span className="font-semibold text-muted-foreground">{scenario.subcategory}</span>
         </div>
         <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight leading-snug">
-          {scenario.title}
+          {title}
         </h3>
       </div>
 
@@ -78,19 +89,19 @@ export function ChecklistCard({ scenario }: ChecklistCardProps) {
       <div className="rounded-2xl bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 p-4 text-sm space-y-1.5">
         <div className="flex items-center gap-2 font-bold text-blue-700 dark:text-blue-400 text-xs uppercase tracking-wide">
           <Lightbulb className="w-4 h-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
-          <span>What Most People Don't Know:</span>
+          <span>{t.whatPeopleDontKnow}</span>
         </div>
         <p className="text-slate-800 dark:text-slate-100 font-semibold text-sm sm:text-base leading-relaxed pl-6">
-          {scenario.what_people_dont_know}
+          {whatPeopleDontKnow}
         </p>
       </div>
 
       {/* Interactive Step-by-Step Checklist */}
       <div className="space-y-2.5 pt-1">
         <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
-          <span>Action Checklist & Verification</span>
+          <span>{t.actionChecklist}</span>
           <span className={`font-semibold ${isAllComplete ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
-            {completedCount} of {items.length} verified ({progressPercent}%)
+            {completedCount} / {items.length} {t.verifiedCount} ({progressPercent}%)
           </span>
         </div>
 
@@ -110,7 +121,7 @@ export function ChecklistCard({ scenario }: ChecklistCardProps) {
         {isAllComplete && (
           <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs sm:text-sm font-bold flex items-center gap-2 animate-in fade-in">
             <CheckCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>All verification steps checked! You're ready to proceed safely.</span>
+            <span>{t.allCompleted}</span>
           </div>
         )}
 
@@ -153,10 +164,10 @@ export function ChecklistCard({ scenario }: ChecklistCardProps) {
         <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
         <div className="space-y-0.5">
           <span className="font-bold block text-rose-700 dark:text-rose-400 uppercase tracking-wide text-xs">
-            Watch Out (Main Risk to Avoid):
+            {t.watchOut}
           </span>
           <p className="leading-relaxed font-semibold text-slate-800 dark:text-slate-100">
-            {scenario.primary_risk}
+            {primaryRisk}
           </p>
         </div>
       </div>

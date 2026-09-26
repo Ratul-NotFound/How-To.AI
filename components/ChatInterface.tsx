@@ -11,7 +11,6 @@ import {
   ArrowRight,
   RotateCcw,
   Compass,
-  CheckCircle2,
   Lightbulb
 } from "lucide-react";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
@@ -19,6 +18,7 @@ import { useVoiceSynthesis } from "@/hooks/useVoiceSynthesis";
 import { VoiceWave } from "./VoiceWave";
 import { ChecklistCard } from "./ChecklistCard";
 import { Scenario } from "@/lib/search/searchEngine";
+import { Language, UI_TEXT } from "@/lib/i18n";
 
 interface Message {
   id: string;
@@ -29,76 +29,6 @@ interface Message {
   confidence?: number;
   related?: Scenario[];
 }
-
-// 8 Featured topics designed for everyday people (tech & non-tech)
-const FEATURED_TOPICS = [
-  {
-    icon: "🚗",
-    title: "Used Car Inspection",
-    desc: "Check chassis welding, engine smoke & BRTA records",
-    prompt: "Used car inspection checklist",
-    color: "hover:border-blue-500/50 hover:bg-blue-500/5",
-  },
-  {
-    icon: "📜",
-    title: "Buying Land & Flats",
-    desc: "30-year deed chain, Khatian, Namjari & avoiding fraud",
-    prompt: "How to check land documents before buying",
-    color: "hover:border-emerald-500/50 hover:bg-emerald-500/5",
-  },
-  {
-    icon: "🐟",
-    title: "Food Safety & Formalin",
-    desc: "Detect formalin in fish, milk & honey adulteration",
-    prompt: "How to test formalin in fish?",
-    color: "hover:border-amber-500/50 hover:bg-amber-500/5",
-  },
-  {
-    icon: "🍳",
-    title: "Cooking & Kitchen Fixes",
-    desc: "Crispy fish frying, meat tenderizing & fixing salty dishes",
-    prompt: "How to make a crispy fish fry without tearing",
-    color: "hover:border-orange-500/50 hover:bg-orange-500/5",
-  },
-  {
-    icon: "📱",
-    title: "Lost Phone & Police GD",
-    desc: "Official online GD procedure & IMEI tracking guide",
-    prompt: "What to do if phone is lost: online GD procedure",
-    color: "hover:border-indigo-500/50 hover:bg-indigo-500/5",
-  },
-  {
-    icon: "🎓",
-    title: "College & University",
-    desc: "HSC college choice strategy, varsity merit lists & seats",
-    prompt: "XI class college admission choice strategy",
-    color: "hover:border-purple-500/50 hover:bg-purple-500/5",
-  },
-  {
-    icon: "👔",
-    title: "Stains & Home DIY",
-    desc: "Remove turmeric, rust, oil stains & household repairs",
-    prompt: "How to remove turmeric stain from shirt?",
-    color: "hover:border-teal-500/50 hover:bg-teal-500/5",
-  },
-  {
-    icon: "⚖️",
-    title: "Legal & Emergency SOPs",
-    desc: "Section 144, tenant police verification & passport",
-    prompt: "Filing police tenant verification form (CIMS)",
-    color: "hover:border-rose-500/50 hover:bg-rose-500/5",
-  },
-];
-
-const QUICK_PILLS = [
-  "🚗 Used car check",
-  "📜 Land documents",
-  "🐟 Formalin in fish",
-  "🍳 Crispy fish fry",
-  "📱 Lost phone GD",
-  "👔 Remove turmeric stain",
-  "🎓 College admissions",
-];
 
 function renderInline(text: string, isUser: boolean) {
   const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
@@ -197,16 +127,63 @@ interface ChatInterfaceProps {
   autoSpeak: boolean;
   externalQuery?: string | null;
   onClearExternalQuery?: () => void;
+  language?: Language;
 }
 
 export function ChatInterface({
   autoSpeak,
   externalQuery,
   onClearExternalQuery,
+  language = "bn",
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const t = UI_TEXT[language];
+
+  const featuredTopics = [
+    {
+      icon: "🚗",
+      ...t.topics.car,
+      color: "hover:border-blue-500/50 hover:bg-blue-500/5",
+    },
+    {
+      icon: "📜",
+      ...t.topics.land,
+      color: "hover:border-emerald-500/50 hover:bg-emerald-500/5",
+    },
+    {
+      icon: "🐟",
+      ...t.topics.food,
+      color: "hover:border-amber-500/50 hover:bg-amber-500/5",
+    },
+    {
+      icon: "🍳",
+      ...t.topics.cooking,
+      color: "hover:border-orange-500/50 hover:bg-orange-500/5",
+    },
+    {
+      icon: "📱",
+      ...t.topics.phone,
+      color: "hover:border-indigo-500/50 hover:bg-indigo-500/5",
+    },
+    {
+      icon: "🎓",
+      ...t.topics.college,
+      color: "hover:border-purple-500/50 hover:bg-purple-500/5",
+    },
+    {
+      icon: "👔",
+      ...t.topics.stains,
+      color: "hover:border-teal-500/50 hover:bg-teal-500/5",
+    },
+    {
+      icon: "⚖️",
+      ...t.topics.legal,
+      color: "hover:border-rose-500/50 hover:bg-rose-500/5",
+    },
+  ];
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const latestMessageRef = useRef<HTMLDivElement>(null);
@@ -234,7 +211,7 @@ export function ChatInterface({
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: query }),
+        body: JSON.stringify({ message: query, lang: language }),
       });
 
       const data = await res.json();
@@ -253,7 +230,7 @@ export function ChatInterface({
 
       // Automatically speak if voice is enabled
       if (autoSpeak && data.voiceText) {
-        speak(data.voiceText);
+        speak(data.voiceText, language);
       }
     } catch (error) {
       console.error("Chat error:", error);
@@ -262,7 +239,10 @@ export function ChatInterface({
         {
           id: `error-${Date.now()}`,
           role: "assistant",
-          content: "Sorry, I had trouble reaching the verified database. Please check your connection and try again.",
+          content:
+            language === "bn"
+              ? "দুঃখিত, সংযোগে সমস্যা হয়েছে। ইন্টারনেট সংযোগ পরীক্ষা করে পুনরায় চেষ্টা করুন।"
+              : "Sorry, I had trouble reaching the verified database. Please check your connection and try again.",
         },
       ]);
     } finally {
@@ -270,7 +250,7 @@ export function ChatInterface({
     }
   };
 
-  // Voice recognition setup
+  // Voice recognition setup configured with active language
   const {
     isListening,
     transcript,
@@ -280,7 +260,7 @@ export function ChatInterface({
     if (finalTranscript) {
       handleSendMessage(finalTranscript);
     }
-  });
+  }, language);
 
   // Handle external query from explorer
   useEffect(() => {
@@ -290,7 +270,7 @@ export function ChatInterface({
     }
   }, [externalQuery]);
 
-  // Scroll smoothly to start of assistant response so user reads from the top
+  // Scroll smoothly to start of assistant response
   useEffect(() => {
     if (messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
@@ -315,16 +295,16 @@ export function ChatInterface({
       {/* Top Banner when in conversation */}
       {!isHeroState && (
         <div className="flex items-center justify-between pb-2 border-b border-border/40 mb-2">
-          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Interactive Guide Session</span>
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>{t.guideSession}</span>
           </div>
           <button
             onClick={handleResetChat}
-            className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground bg-secondary/80 hover:bg-secondary px-2.5 py-1 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground bg-secondary/80 hover:bg-secondary px-2.5 py-1.5 rounded-xl transition-colors shadow-xs active:scale-95"
           >
-            <RotateCcw className="w-3 h-3" />
-            <span>New Question</span>
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>{t.newQuestion}</span>
           </button>
         </div>
       )}
@@ -340,14 +320,14 @@ export function ChatInterface({
           <div className="flex items-center gap-2.5">
             <div className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
             <span className="text-xs sm:text-sm font-semibold text-foreground">
-              {transcript ? `"${transcript}"` : "Listening... Speak your question now"}
+              {transcript ? `"${transcript}"` : t.listeningBanner}
             </span>
           </div>
           <button
             onClick={toggleListening}
-            className="px-3 py-1 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors"
+            className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors active:scale-95"
           >
-            Stop
+            {t.stop}
           </button>
         </div>
       )}
@@ -363,10 +343,10 @@ export function ChatInterface({
                 <Compass className="w-8 h-8 sm:w-10 sm:h-10 animate-pulse" />
               </div>
               <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-                What can I help you solve today?
+                {t.heroTitle}
               </h1>
               <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
-                Step-by-step verified solutions to 2,000 real-world life problems—from land deeds and car checks to food safety and emergency procedures.
+                {t.heroSubtitle}
               </p>
             </div>
 
@@ -380,7 +360,7 @@ export function ChatInterface({
                       ? "bg-red-500 shadow-red-500/40 animate-pulse"
                       : "bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105"
                   }`}
-                  title="Tap to speak your question"
+                  title={t.tapToSpeak}
                 >
                   {isListening ? (
                     <MicOff className="w-7 h-7 sm:w-9 sm:h-9" />
@@ -390,10 +370,10 @@ export function ChatInterface({
                 </button>
                 <div className="text-center">
                   <span className="text-sm sm:text-base font-bold text-foreground block">
-                    {isListening ? "Listening... Tap to finish" : "Tap to Speak"}
+                    {isListening ? t.listeningTapStop : t.tapToSpeak}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    Ask freely in English or Bangla
+                    {t.speakFreely}
                   </span>
                 </div>
               </div>
@@ -403,12 +383,12 @@ export function ChatInterface({
             <div className="space-y-3 text-left">
               <div className="flex items-center justify-between px-1">
                 <span className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-wider">
-                  Popular Life Problems (Tap to solve):
+                  {t.popularProblems}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                {FEATURED_TOPICS.map((topic, idx) => (
+                {featuredTopics.map((topic, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSendMessage(topic.prompt)}
@@ -472,7 +452,7 @@ export function ChatInterface({
                 {/* Scenario Interactive Checklist Card */}
                 {msg.scenario && (
                   <div className="mt-3">
-                    <ChecklistCard scenario={msg.scenario} />
+                    <ChecklistCard scenario={msg.scenario} language={language} />
                   </div>
                 )}
 
@@ -481,7 +461,7 @@ export function ChatInterface({
                   <div className="mt-4 pt-3 border-t border-border/60 text-xs sm:text-sm space-y-2">
                     <span className="font-bold text-muted-foreground flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                      <span>Related Verified Guides You Might Need:</span>
+                      <span>{t.relatedGuides}</span>
                     </span>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-1">
                       {msg.related.map((rel) => (
@@ -501,13 +481,13 @@ export function ChatInterface({
                 {/* Speech replay button */}
                 {msg.voiceText && (
                   <div className="mt-3 pt-2 flex items-center justify-between border-t border-border/40">
-                    <span className="text-[11px] text-muted-foreground">Voice Assistant</span>
+                    <span className="text-[11px] text-muted-foreground">{t.voiceAssistant}</span>
                     <button
-                      onClick={() => speak(msg.voiceText || msg.content)}
+                      onClick={() => speak(msg.voiceText || msg.content, language)}
                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors active:scale-95"
                     >
                       <Volume2 className="w-3.5 h-3.5" />
-                      <span>Listen to Answer</span>
+                      <span>{t.listenToAnswer}</span>
                     </button>
                   </div>
                 )}
@@ -521,7 +501,7 @@ export function ChatInterface({
           <div className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border/80 max-w-md shadow-sm ml-11 animate-pulse">
             <div className="w-3 h-3 rounded-full bg-blue-500 animate-ping" />
             <span className="text-xs sm:text-sm font-semibold text-foreground">
-              Searching 2,000 verified guides & verifying facts...
+              {t.searching}
             </span>
           </div>
         )}
@@ -532,7 +512,7 @@ export function ChatInterface({
       {/* Suggested Quick Prompts Pills (visible when chatting) */}
       {!isHeroState && (
         <div className="py-1.5 overflow-x-auto no-scrollbar flex items-center gap-1.5 mb-1.5">
-          {QUICK_PILLS.map((pill, idx) => (
+          {t.quickPills.map((pill, idx) => (
             <button
               key={idx}
               onClick={() => handleSendMessage(pill)}
@@ -559,7 +539,7 @@ export function ChatInterface({
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ask any life problem (e.g. used car, land, food, stain, admission)..."
+            placeholder={t.askPlaceholder}
             className="flex-1 bg-transparent px-3 py-2 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
             disabled={isLoading}
           />
@@ -574,7 +554,7 @@ export function ChatInterface({
                   ? "bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30"
                   : "bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20"
               }`}
-              title={isListening ? "Listening... Click to stop" : "Click to speak with your voice"}
+              title={isListening ? t.listeningTapStop : t.tapToSpeak}
             >
               <Mic className="w-5 h-5 sm:w-5 sm:h-5" />
             </button>

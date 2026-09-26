@@ -13,7 +13,10 @@ interface SpeechRecognitionErrorEvent extends Event {
   message?: string;
 }
 
-export function useVoiceRecognition(onFinalTranscript?: (text: string) => void) {
+export function useVoiceRecognition(
+  onFinalTranscript?: (text: string) => void,
+  lang: "en" | "bn" = "bn"
+) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isSupported, setIsSupported] = useState(false);
@@ -32,7 +35,7 @@ export function useVoiceRecognition(onFinalTranscript?: (text: string) => void) 
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = true;
-        recognition.lang = "en-US";
+        recognition.lang = lang === "bn" ? "bn-BD" : "en-US";
 
         recognition.onstart = () => {
           setIsListening(true);
@@ -87,18 +90,26 @@ export function useVoiceRecognition(onFinalTranscript?: (text: string) => void) 
         }
       }
     };
-  }, [onFinalTranscript]);
+  }, [onFinalTranscript, lang]);
+
+  // Update language dynamically on recognition instance
+  useEffect(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.lang = lang === "bn" ? "bn-BD" : "en-US";
+    }
+  }, [lang]);
 
   const startListening = useCallback(() => {
     if (!recognitionRef.current) return;
     setError(null);
     setTranscript("");
     try {
+      recognitionRef.current.lang = lang === "bn" ? "bn-BD" : "en-US";
       recognitionRef.current.start();
     } catch (e) {
       console.warn("Could not start recognition:", e);
     }
-  }, []);
+  }, [lang]);
 
   const stopListening = useCallback(() => {
     if (!recognitionRef.current) return;

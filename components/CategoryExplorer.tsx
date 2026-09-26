@@ -59,30 +59,31 @@ export function CategoryExplorer({
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="w-full max-w-4xl h-[90vh] bg-card border border-border/80 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="w-full max-w-4xl h-[92dvh] sm:h-[90vh] bg-card border border-border/80 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-border/80 flex items-center justify-between bg-secondary/30">
-          <div className="flex items-center gap-2.5">
+        <div className="p-4 sm:p-5 border-b border-border/80 flex items-center justify-between gap-2 bg-secondary/30">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             {selectedCategory && (
               <button
                 onClick={() => {
                   setSelectedCategory(null);
                   setActiveScenario(null);
                 }}
-                className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground transition-colors mr-1 active:scale-95"
+                className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground transition-colors mr-1 active:scale-95 flex-shrink-0"
                 title={t.backToCategories}
+                aria-label={t.backToCategories}
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
             )}
-            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold flex-shrink-0">
               <Compass className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-foreground leading-tight">
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-foreground leading-tight truncate">
                 {currentCategoryMeta ? currentCategoryMeta.name : t.explorerTitle}
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground truncate">
                 {selectedCategory
                   ? language === "bn"
                     ? "বিস্তারিত দেখতে যেকোনো গাইডে চাপুন"

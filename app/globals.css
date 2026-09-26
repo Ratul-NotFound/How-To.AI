@@ -74,6 +74,218 @@ body {
   color: var(--foreground);
   font-family: 'Hind Siliguri', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   min-height: 100vh;
+  /* Avoid iOS auto-zoom on focus when fields are under 16px */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ===================================================================
+   ACCESSIBILITY LAYER
+   Driven by data-attributes on <html>, set by AccessibilityProvider.
+   Designed for elderly users, children, and low-tech-literacy users.
+   =================================================================== */
+
+/* ---------- 1. TEXT SCALING ----------
+   Everything sizes in rem/tailwind units, so changing the root font-size
+   scales the entire interface at once — no per-component overrides. */
+html[data-text-scale="large"]  { font-size: 18px; }
+html[data-text-scale="xlarge"] { font-size: 20px; }
+html[data-text-scale="huge"]   { font-size: 23px; }
+
+html[data-text-scale="large"],
+html[data-text-scale="xlarge"],
+html[data-text-scale="huge"] {
+  /* Scale the default body colour up so it stays comfortably readable */
+  --muted-foreground: #475569;
+}
+html[data-text-scale="xlarge"] { --muted-foreground: #3f4c5c; }
+html[data-text-scale="huge"]   { --muted-foreground: #364152; }
+
+.dark html[data-text-scale="large"],
+.dark html[data-text-scale="xlarge"],
+.dark html[data-text-scale="huge"] { --muted-foreground: #cbd5e1; }
+
+/* Once the root font grows, secondary/decorative text is the first thing
+   that should go — it competes with the primary action. */
+html[data-text-scale="xlarge"] .a11y-hide-when-large,
+html[data-text-scale="huge"] .a11y-hide-when-large {
+  display: none !important;
+}
+
+/* ---------- 2. HIGH CONTRAST ---------- */
+html[data-contrast="high"] {
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --muted: #f3f4f6;
+  --muted-foreground: #1f2937;
+  --border: #000000;
+  --input: #000000;
+  --primary: #0033cc;
+  --primary-foreground: #ffffff;
+  --accent: #e5e7eb;
+  --accent-foreground: #000000;
+  --ring: #0033cc;
+}
+
+html[data-contrast="high"].dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --card-foreground: #ffffff;
+  --muted: #1a1a1a;
+  --muted-foreground: #f1f1f1;
+  --border: #ffffff;
+  --input: #ffffff;
+  --primary: #7db3ff;
+  --primary-foreground: #000000;
+  --accent: #262626;
+  --accent-foreground: #ffffff;
+  --ring: #7db3ff;
+}
+
+/* In high contrast, coloured text on coloured backgrounds is unreliable,
+   so force strong separation. */
+html[data-contrast="high"] .text-muted-foreground {
+  color: var(--muted-foreground) !important;
+  font-weight: 600;
+}
+html[data-contrast="high"] .border-border\/40,
+html[data-contrast="high"] .border-border\/60,
+html[data-contrast="high"] .border-border\/80 {
+  border-color: var(--border) !important;
+}
+
+/* ---------- 3. MINIMUM TAP TARGET SIZE ----------
+   WCAG 2.2 AA requires 24x24 CSS px; we target 48px for elderly users
+   with reduced fine motor control. */
+@media (pointer: coarse) {
+  button,
+  a[href],
+  input[type="button"],
+  input[type="submit"],
+  [role="button"] {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Icon-only buttons need extra breathing room around the glyph */
+  button svg {
+    flex-shrink: 0;
+  }
+}
+
+/* Also apply on desktop when the user has enlarged text, since a
+   20px-tall button is unusable at 23px root font size. */
+html[data-text-scale="xlarge"] button,
+html[data-text-scale="huge"] button {
+  min-height: 44px;
+}
+html[data-text-scale="huge"] button {
+  min-height: 48px;
+}
+
+/* On very narrow screens the 48px min-width floor on three side-by-side
+   controls (mic + send + input) exceeds the available width and pushes the
+   send button off-screen. Scale the floor down with the viewport instead
+   of letting controls clip. */
+@media (max-width: 380px) {
+  html[data-text-scale="huge"] button,
+  html[data-text-scale="xlarge"] button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* ---------- 4. VISIBLE FOCUS INDICATORS ----------
+   Never remove the focus ring; older users often navigate by keyboard. */
+:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+html[data-contrast="high"] :focus-visible {
+  outline: 4px solid #ff8c00;
+  outline-offset: 3px;
+}
+
+/* ---------- 5. REDUCED MOTION ---------- */
+html[data-reduce-motion="on"] *,
+html[data-reduce-motion="on"] *::before,
+html[data-reduce-motion="on"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ---------- 6. SIMPLE MODE ----------
+   Strips decoration and flattens colour so the page reads as plain text.
+   Helpful for users easily overwhelmed by a busy interface. */
+html[data-simple="on"] .a11y-hide-in-simple {
+  display: none !important;
+}
+
+html[data-simple="on"] body {
+  background: #ffffff;
+  color: #111111;
+}
+
+html[data-simple="on"] * {
+  box-shadow: none !important;
+}
+
+html[data-simple="on"] .shadow-lg,
+html[data-simple="on"] .shadow-md,
+html[data-simple="on"] .shadow-sm,
+html[data-simple="on"] .shadow-xl {
+  box-shadow: none !important;
+  border: 1px solid #333333 !important;
+}
+
+html[data-simple="on"] main,
+html[data-simple="on"] header {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+}
+
+/* ---------- 7. FORCED COLORS / HIGH CONTRAST OS MODE ---------- */
+@media (forced-colors: active) {
+  button,
+  a {
+    forced-color-adjust: none;
+    border: 1px solid ButtonText;
+  }
+  :focus-visible {
+    outline: 3px solid Highlight;
+  }
+}
+
+/* ---------- 8. SCROLL BEHAVIOUR ---------- */
+html {
+  scroll-behavior: smooth;
+}
+html[data-reduce-motion="on"] {
+  scroll-behavior: auto;
+}
+
+/* Hide scrollbars on horizontal carousels (tab bars, quick-pill rows).
+   Referenced by ChatInterface + ChecklistCard but was never defined. */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome / Safari */
+  width: 0;
+  height: 0;
+}
+
+/* Keep long Bengali/English words from overflowing narrow phones */
+p, li, span, h1, h2, h3, h4 {
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 @keyframes wave {

@@ -330,7 +330,7 @@ export function ChatInterface({
   const isHeroState = messages.length === 0;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-62px)] max-w-4xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
+    <div className="flex flex-col h-full min-h-0 max-w-4xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
       {/* Top Banner when in conversation */}
       {!isHeroState && (
         <div className="flex items-center justify-between pb-2 border-b border-border/40 mb-2">
@@ -372,46 +372,47 @@ export function ChatInterface({
       )}
 
       {/* Scrollable Area: Hero State OR Messages */}
-      <div className="flex-1 overflow-y-auto pr-1 pb-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-1 pb-4 space-y-4">
         {isHeroState ? (
           /* ================= WELCOME HERO STATE (NON-TECH FRIENDLY) ================= */
-          <div className="py-4 sm:py-8 space-y-6 sm:space-y-8 max-w-3xl mx-auto text-center">
+          <div className="py-3 sm:py-6 space-y-5 sm:space-y-7 max-w-3xl mx-auto text-center">
             {/* Friendly Greeting & Headline */}
             <div className="space-y-3">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 text-white flex items-center justify-center mx-auto shadow-xl shadow-blue-500/25">
-                <Compass className="w-8 h-8 sm:w-10 sm:h-10 animate-pulse" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-blue-500/25">
+                <Compass className="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+              <h1 className="text-xl sm:text-3xl font-extrabold text-foreground tracking-tight text-balance">
                 {t.heroTitle}
               </h1>
-              <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed a11y-hide-when-large">
                 {t.heroSubtitle}
               </p>
             </div>
 
             {/* Giant Inviting Microphone Button */}
             {isSpeechSupported && (
-              <div className="p-4 sm:p-5 rounded-3xl border border-blue-500/20 bg-gradient-to-b from-blue-500/5 to-transparent flex flex-col items-center gap-3">
+              <div className="p-4 sm:p-5 rounded-3xl border-2 border-blue-500/25 bg-gradient-to-b from-blue-500/5 to-transparent flex flex-col items-center gap-3">
                 <button
                   onClick={toggleListening}
-                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 active:scale-95 ${
+                  className={`w-20 h-20 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-300 active:scale-95 ${
                     isListening
-                      ? "bg-red-500 shadow-red-500/40 animate-pulse"
-                      : "bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105"
+                      ? "bg-red-500 shadow-red-500/50 animate-pulse"
+                      : "bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/40 hover:shadow-blue-500/60 hover:scale-105"
                   }`}
                   title={t.tapToSpeak}
+                  aria-label={isListening ? t.listeningTapStop : t.tapToSpeak}
                 >
                   {isListening ? (
-                    <MicOff className="w-7 h-7 sm:w-9 sm:h-9" />
+                    <MicOff className="w-9 h-9 sm:w-12 sm:h-12" />
                   ) : (
-                    <Mic className="w-7 h-7 sm:w-9 sm:h-9" />
+                    <Mic className="w-9 h-9 sm:w-12 sm:h-12" />
                   )}
                 </button>
                 <div className="text-center">
-                  <span className="text-sm sm:text-base font-bold text-foreground block">
+                  <span className="text-base sm:text-xl font-extrabold text-foreground block">
                     {isListening ? t.listeningTapStop : t.tapToSpeak}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm sm:text-base text-muted-foreground">
                     {t.speakFreely}
                   </span>
                 </div>
@@ -426,24 +427,24 @@ export function ChatInterface({
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {featuredTopics.map((topic, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSendMessage(topic.prompt)}
-                    className={`p-3.5 sm:p-4 rounded-2xl border border-border bg-card text-left transition-all shadow-sm flex items-start gap-3 group active:scale-98 ${topic.color}`}
+                    className={`p-4 sm:p-5 rounded-2xl border-2 border-border bg-card text-left transition-all shadow-sm flex items-center gap-4 group active:scale-98 min-h-[76px] ${topic.color}`}
                   >
-                    <span className="text-2xl sm:text-3xl p-2 rounded-xl bg-secondary/80 flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <span className="text-3xl sm:text-4xl p-3 rounded-2xl bg-secondary/80 flex-shrink-0 group-hover:scale-110 transition-transform">
                       {topic.icon}
                     </span>
-                    <div className="space-y-0.5">
+                    <div className="space-y-0.5 min-w-0">
                       <div className="flex items-center gap-1">
-                        <h4 className="text-sm sm:text-base font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <h4 className="text-base sm:text-lg font-extrabold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {topic.title}
                         </h4>
-                        <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                        <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0" />
                       </div>
-                      <p className="text-xs sm:text-sm text-muted-foreground leading-snug line-clamp-2">
+                      <p className="text-sm sm:text-[15px] text-muted-foreground leading-snug">
                         {topic.desc}
                       </p>
                     </div>
@@ -568,22 +569,26 @@ export function ChatInterface({
       )}
 
       {/* Ergonomic Floating Bottom Input Box */}
-      <div className="relative rounded-2xl sm:rounded-3xl border border-border/80 bg-card p-2 sm:p-2.5 shadow-lg focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+      <div className="relative rounded-2xl sm:rounded-3xl border-2 border-border bg-card p-2 sm:p-2.5 shadow-lg focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSendMessage();
           }}
-          className="flex items-center gap-1.5 sm:gap-2"
+          className="flex items-center gap-1.5 sm:gap-2 w-full"
         >
-          {/* Main Input Text Field */}
+          {/* Main Input Text Field.
+              min-w-0 is REQUIRED: without it a flex item refuses to shrink
+              below its intrinsic (size=20) width, which pushed the send
+              button off-screen on 320px devices. */}
           <input
             ref={inputRef}
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={t.askPlaceholder}
-            className="flex-1 bg-transparent px-3 py-2 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
+            aria-label={t.askPlaceholder}
+            className="flex-1 min-w-0 w-full bg-transparent px-2 sm:px-3 py-3 text-base sm:text-lg text-foreground placeholder:text-muted-foreground focus:outline-none"
             disabled={isLoading}
           />
 
@@ -592,14 +597,15 @@ export function ChatInterface({
             <button
               type="button"
               onClick={toggleListening}
-              className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl transition-all flex items-center justify-center active:scale-90 ${
+              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl transition-all flex items-center justify-center active:scale-90 flex-shrink-0 ${
                 isListening
                   ? "bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30"
-                  : "bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                  : "bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-2 border-blue-500/25"
               }`}
               title={isListening ? t.listeningTapStop : t.tapToSpeak}
+              aria-label={isListening ? t.listeningTapStop : t.tapToSpeak}
             >
-              <Mic className="w-5 h-5 sm:w-5 sm:h-5" />
+              <Mic className="w-6 h-6 sm:w-7 sm:h-7" />
             </button>
           )}
 
@@ -607,14 +613,15 @@ export function ChatInterface({
           <button
             type="submit"
             disabled={!inputValue.trim() || isLoading}
-            className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl transition-all flex items-center justify-center active:scale-90 ${
+            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl transition-all flex items-center justify-center active:scale-90 flex-shrink-0 ${
               inputValue.trim() && !isLoading
                 ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25 hover:opacity-95"
                 : "bg-muted text-muted-foreground/50 cursor-not-allowed"
             }`}
-            title="Send question"
+            title={language === "bn" ? "প্রশ্ন পাঠান" : "Send question"}
+            aria-label={language === "bn" ? "প্রশ্ন পাঠান" : "Send question"}
           >
-            <Send className="w-5 h-5 sm:w-5 sm:h-5" />
+            <Send className="w-6 h-6 sm:w-7 sm:h-7" />
           </button>
         </form>
       </div>

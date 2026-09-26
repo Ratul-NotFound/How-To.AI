@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { AccessibilityProvider } from "@/components/AccessibilityProvider";
 
 export const metadata: Metadata = {
   title: "How-To.AI - Your Daily Life & Problem Assistant",
@@ -15,9 +16,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#2563eb",
   width: "device-width",
+  // Pinch-zoom is deliberately ALLOWED. Disabling it (userScalable:false,
+  // maximumScale:1) is a WCAG 1.4.4 failure and blocks elderly/low-vision
+  // users from magnifying the interface. Text scaling is offered through
+  // the in-app Accessibility panel instead, but native zoom must stay on.
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -46,12 +50,26 @@ export default function RootLayout({
                   document.documentElement.classList.remove('dark');
                 }
               } catch (_) {}
+
+              // Apply accessibility preferences BEFORE first paint so the
+              // page never flashes at the wrong text size / contrast level.
+              try {
+                var saved = JSON.parse(localStorage.getItem('how_to_a11y') || '{}');
+                var r = document.documentElement;
+                r.dataset.textScale = saved.textScale || 'normal';
+                r.dataset.contrast = saved.contrast || 'normal';
+                r.dataset.simple = saved.simpleMode ? 'on' : 'off';
+                var noMotion = saved.reduceMotion ||
+                  (saved.reduceMotion === undefined &&
+                   window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+                r.dataset.reduceMotion = noMotion ? 'on' : 'off';
+              } catch (_) {}
             `,
           }}
         />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased selection:bg-blue-500/20 selection:text-blue-500">
-        {children}
+        <AccessibilityProvider>{children}</AccessibilityProvider>
 
         {/* Service Worker Registration */}
         <script

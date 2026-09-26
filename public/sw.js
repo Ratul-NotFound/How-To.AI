@@ -1,15 +1,26 @@
 // Service Worker for How-To.AI PWA
-const CACHE_NAME = 'howto-ai-v1';
+const CACHE_NAME = 'howto-ai-v2';
+// Only real, build-stable paths. Note: Next.js bundles CSS to a hashed
+// /_next/static/... path at build time, so there is NO stable '/app/globals.css'
+// to precache. Attempting it made cache.addAll() reject atomically, which
+// failed the whole install and silently disabled all offline caching.
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/app/globals.css',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
+      // Add individually so a single unavailable asset cannot abort the
+      // entire precache (and therefore the install).
+      return Promise.all(
+        STATIC_ASSETS.map((url) =>
+          cache.add(url).catch((err) => {
+            console.warn('[sw] precache skipped:', url, err);
+          })
+        )
+      );
     })
   );
   self.skipWaiting();
@@ -50,6 +61,15 @@ self.addEventListener('fetch', (event) => {
           // If offline and request fails, return cached response
           return cachedResponse;
         });
+
+      // Navigation requests must never reject offline, otherwise the browser
+      // shows its own error page instead of the app shell.
+      if (event.request.mode === 'navigate') {
+        return fetchPromise.then((response) => {
+          if (response && response.status === 200) return response;
+          return cachedResponse || caches.match('/');
+        });
+      }
 
       return cachedResponse || fetchPromise;
     })

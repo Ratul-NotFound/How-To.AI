@@ -15,6 +15,10 @@ export interface SearchResult {
   scenario: Scenario;
   score: number;
   matchedTerms: string[];
+  /** Fraction of the query's own content stems this document explains. */
+  coverage: number;
+  /** How many of the query's own content stems this document matched. */
+  contentStemHits: number;
 }
 
 export interface SearchResponse {
@@ -248,8 +252,7 @@ export function searchScenarios(query: string, limit = 10): SearchResponse {
     return { directMatch: null, confidence: 0, results: [], suggestedCategories: [], totalMatches: 0, queryStems: [] };
   }
 
-  const queryLower = query.toLowerCase().trim();
-  const rawWords = queryLower
+  const rawWords = query.toLowerCase().trim()
     .replace(/[^\w\s\u0980-\u09FF]/g, " ")
     .split(/\s+/)
     .filter((w) => w.length >= 2);
@@ -269,8 +272,13 @@ export function searchScenarios(query: string, limit = 10): SearchResponse {
   const primaryStems: string[] = [];
   const expandedStems = new Set<string>();
 
-  for (const w of rawWords) {
-    if (GRAMMATICAL_STOP_WORDS.has(w)) continue;
+  // Content words only. Phrase matching below MUST use this list rather than
+  // rawWords, otherwise pure filler ("at night", "how to", "the a in") matches
+  // real title/body substrings and scores high-confidence on noise.
+  const contentWords = rawWords.filter((w) => !GRAMMATICAL_STOP_WORDS.has(w));
+  const contentStemSet = new Set(contentWords.map(stemWord));
+
+  for (const w of contentWords) {
     const st = stemWord(w);
     primaryStems.push(st);
     expandedStems.add(st);
@@ -288,11 +296,23 @@ export function searchScenarios(query: string, limit = 10): SearchResponse {
     }
   }
 
+  // A query made entirely of filler carries no retrievable intent.
+  if (contentWords.length === 0) {
+    return {
+      directMatch: null,
+      confidence: 0,
+      results: [],
+      suggestedCategories: categoryList.slice(0, 6),
+      totalMatches: 0,
+      queryStems: [],
+    };
+  }
+
   // 2. Compute category domain intent affinity
   const categoryBoosts: Record<string, number> = {};
   for (const [cat, kws] of Object.entries(CATEGORY_KEYWORDS)) {
     for (const kw of kws) {
-      if (expandedStems.has(kw) || rawWords.some((rw) => rw.startsWith(kw))) {
+      if (expandedStems.has(kw) || contentWords.some((cw) => cw.startsWith(kw))) {
         categoryBoosts[cat] = (categoryBoosts[cat] || 0) + 25;
       }
     }
@@ -312,10 +332,10 @@ export function searchScenarios(query: string, limit = 10): SearchResponse {
       matchedTerms.push(`category:${sc.category}`);
     }
 
-    // B. Multi-word phrase matching (2-gram and 3-gram)
+    // B. Multi-word phrase matching (2-gram and 3-gram) over CONTENT words only
     for (let phraseLen = 3; phraseLen >= 2; phraseLen--) {
-      for (let i = 0; i <= rawWords.length - phraseLen; i++) {
-        const phrase = rawWords.slice(i, i + phraseLen).join(" ");
+      for (let i = 0; i <= contentWords.length - phraseLen; i++) {
+        const phrase = contentWords.slice(i, i + phraseLen).join(" ");
         if (phrase.length >= 5) {
           if (item.titleLower.includes(phrase)) {
             score += 35 * phraseLen;
@@ -331,27 +351,38 @@ export function searchScenarios(query: string, limit = 10): SearchResponse {
       }
     }
 
-    // C. Exact title match bonus
-    if (item.titleLower.includes(queryLower) && queryLower.length >= 8) {
+    // C. Exact title match bonus (content words only, so "how to" cannot
+    //    match every title containing the literal phrase "How to")
+    const contentPhrase = contentWords.join(" ");
+    if (
+      contentPhrase.length >= 8 &&
+      item.titleLower.includes(contentPhrase)
+    ) {
       score += 60;
       matchedTerms.push("exact_title");
     }
 
     // D. Strict Token stem matching
     let matchedStemCount = 0;
+    // Coverage of the query's own content stems (not synonym expansions) is the
+    // key evidence signal: a strong answer explains what the user actually asked.
+    const coveredContentStems = new Set<string>();
     for (const qStem of expandedStems) {
       if (item.titleStems.includes(qStem)) {
         score += 14;
         matchedTerms.push(`title:${qStem}`);
         matchedStemCount++;
+        if (contentStemSet.has(qStem)) coveredContentStems.add(qStem);
       } else if (item.subStems.includes(qStem)) {
         score += 10;
         matchedTerms.push(`sub:${qStem}`);
         matchedStemCount++;
+        if (contentStemSet.has(qStem)) coveredContentStems.add(qStem);
       } else if (item.bodyStems.has(qStem)) {
         score += 3;
         matchedTerms.push(`body:${qStem}`);
         matchedStemCount++;
+        if (contentStemSet.has(qStem)) coveredContentStems.add(qStem);
       } else {
         // Fuzzy match: ONLY for stems of length >= 4 with Levenshtein <= 1
         if (qStem.length >= 4) {
@@ -360,6 +391,7 @@ export function searchScenarios(query: string, limit = 10): SearchResponse {
               score += 9;
               matchedTerms.push(`fuzzy:${qStem}~${tStem}`);
               matchedStemCount++;
+              if (contentStemSet.has(qStem)) coveredContentStems.add(qStem);
               break;
             }
           }
@@ -382,6 +414,8 @@ export function searchScenarios(query: string, limit = 10): SearchResponse {
         scenario: sc,
         score,
         matchedTerms,
+        coverage: contentWords.length > 0 ? coveredContentStems.size / contentStemSet.size : 0,
+        contentStemHits: coveredContentStems.size,
       });
     }
   }
@@ -396,14 +430,40 @@ export function searchScenarios(query: string, limit = 10): SearchResponse {
   let confidence = 0;
 
   if (best) {
-    // Confidence calculation:
-    // Scale best score against standard high-confidence benchmark (score ~100 -> 1.0)
-    confidence = Math.min(1.0, Number((best.score / 90).toFixed(2)));
+    // Confidence is driven by EVIDENCE, not by a raw score ratio.
+    //
+    // The old formula (score / 90) saturated at 1.0 for nearly every real
+    // query, because a single category-affinity hit alone contributes +25 and
+    // scores are not length-normalized. Confidence therefore carried no signal.
+    //
+    // New model:
+    //  - coverage: how much of what the user literally asked is explained
+    //  - strength: saturating scale of the absolute score (diminishing returns)
+    //  - margin:  how far the winner beats the runner-up (disambiguability)
+    const strength = 1 - Math.exp(-best.score / 55);
+    const margin =
+      scoredResults.length > 1
+        ? (best.score - scoredResults[1].score) / best.score
+        : 1;
+    const marginFactor = 0.75 + 0.25 * Math.min(1, Math.max(0, margin));
 
-    // Direct match criteria:
-    // 1. Must score >= 45 points
-    // 2. Must clearly dominate or match an exact scenario intent
-    if (best.score >= 45 && confidence >= 0.50) {
+    confidence = Number(
+      Math.min(
+        1,
+        best.coverage * 0.6 + strength * 0.4
+      ).toFixed(2)
+    );
+    confidence = Number(Math.min(1, confidence * marginFactor).toFixed(2));
+
+    // Direct match criteria (tightened):
+    //  1. Must explain at least HALF of the query's own content stems, and
+    //     at least one of them when the query is short.
+    //  2. Must have a meaningful absolute score.
+    //  3. Must be reasonably confident.
+    const minStemHits = contentStemSet.size <= 1 ? 1 : Math.ceil(contentStemSet.size * 0.5);
+    const hasStemEvidence = best.contentStemHits >= minStemHits;
+
+    if (hasStemEvidence && best.score >= 45 && confidence >= 0.5) {
       directMatch = best.scenario;
     }
   }

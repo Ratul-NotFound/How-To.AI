@@ -23,6 +23,12 @@ export default function Home() {
     } catch (_) {}
   }, []);
 
+  // Keep the document language in sync so screen readers use the correct
+  // pronunciation rules for Bangla vs English.
+  useEffect(() => {
+    document.documentElement.setAttribute("lang", language);
+  }, [language]);
+
   const handleToggleLanguage = () => {
     const next: Language = language === "bn" ? "en" : "bn";
     setLanguage(next);
@@ -41,7 +47,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col bg-background text-foreground transition-colors">
+    <main className="h-dvh min-h-0 flex flex-col overflow-hidden bg-background text-foreground transition-colors">
       <Header
         autoSpeak={autoSpeak}
         onToggleAutoSpeak={() => setAutoSpeak((prev) => !prev)}
@@ -51,7 +57,7 @@ export default function Home() {
         onToggleLanguage={handleToggleLanguage}
       />
 
-      <div className="flex-1">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <ChatInterface
           key={`${chatKey}-${language}`}
           autoSpeak={autoSpeak}

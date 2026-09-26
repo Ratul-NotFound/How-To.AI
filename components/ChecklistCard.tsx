@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   CheckCircle2,
   Circle,
@@ -87,6 +87,39 @@ export function ChecklistCard({ scenario, guideline: propGuideline, language = "
   const [viewAll, setViewAll] = useState(false);
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
 
+  // Persist checklist progress so a refresh, accidental tab close, or
+  // accidental app restart does not wipe a half-finished safety check.
+  // Older users frequently abandon and return to a task.
+  const storageKey = `how_to_checklist_${scenario.id}`;
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Record<string, boolean>;
+        const safe: Record<number, boolean> = {};
+        for (const [k, v] of Object.entries(parsed)) {
+          const idx = Number(k);
+          if (Number.isInteger(idx) && idx >= 0 && idx < checklistItems.length) {
+            safe[idx] = Boolean(v);
+          }
+        }
+        setCheckedItems(safe);
+      }
+    } catch (_) {
+      // Ignore malformed storage and start fresh.
+    }
+  }, [storageKey, checklistItems.length]);
+
+  useEffect(() => {
+    if (Object.keys(checkedItems).length === 0) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(checkedItems));
+    } catch (_) {
+      // Quota or private mode: progress just won't survive a refresh.
+    }
+  }, [checkedItems, storageKey]);
+
   const toggleItem = (idx: number) => {
     setCheckedItems((prev) => ({
       ...prev,
@@ -138,9 +171,12 @@ export function ChecklistCard({ scenario, guideline: propGuideline, language = "
         </div>
       )}
 
-      {/* Navigation Tabs Bar */}
+      {/* Navigation Tabs Bar.
+          min-w-0 on the inner row is required: without it the flex child keeps
+          its full intrinsic width, so the parent's overflow-x-auto never
+          engages and the tabs spill off a 320px screen. */}
       <div className="flex items-center justify-between gap-1.5 border-b border-border/80 pb-1.5 overflow-x-auto no-scrollbar">
-        <div className="flex items-center gap-1 flex-nowrap">
+        <div className="flex items-center gap-1 flex-nowrap min-w-0">
           {/* Checklist Tab */}
           <button
             onClick={() => {
@@ -311,6 +347,22 @@ export function ChecklistCard({ scenario, guideline: propGuideline, language = "
               <CheckCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>{t.allCompleted}</span>
             </div>
+          )}
+
+          {/* Reset progress — available once something is ticked, so a
+              mis-tap or a changed plan is easy to recover from. */}
+          {completedCount > 0 && (
+            <button
+              onClick={() => {
+                setCheckedItems({});
+                try {
+                  localStorage.removeItem(storageKey);
+                } catch (_) {}
+              }}
+              className="inline-block text-xs font-semibold text-muted-foreground hover:text-foreground underline underline-offset-2 py-1"
+            >
+              {language === "bn" ? "✓ চিহ্নগুলো মুছে নতুন করে শুরু করুন" : "✓ Clear ticks and start again"}
+            </button>
           )}
 
           {/* Checklist Items */}
